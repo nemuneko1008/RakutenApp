@@ -44,8 +44,6 @@ class RakutenGenreService
         $parentGenreList = [];
         for ($i=0; $i<self::TARGET_RANGE_GENRE_LEVEL; $i++) {
             $getGenreListResult = $this->rakutenGenreApiExecute($parentGenreList);
-            // TODO 動作軽量化処理 コミット時修正
-            $parentGenreList = collect($getGenreListResult)->take(1)->toArray();
             array_push($genreList, $getGenreListResult);
         }
 

@@ -41,9 +41,6 @@ class RakutenItemRankingController extends Controller
         }
         $result['getRakutenGenreListResult'] = 'success';
 
-        // TODO 動作軽量化処理 コミット時修正
-        $rakutenGenreList = collect($rakutenGenreList)->take(10)->toArray();
-
         // 楽天APIを利用して商品ランキング情報を取得
         $getRakutenItemRanking = $this->RakutenItemRankingService->getRakutenItemRanking($rakutenGenreList);
         if (empty($getRakutenItemRanking)) {
