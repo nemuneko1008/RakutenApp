@@ -3,18 +3,16 @@
 namespace App\Services;
 
 use App\Models\RakutenApp\RakutenGenre;
-use GuzzleHttp\Client as HttpClient;
-use GuzzleHttp\Exception\RequestException;
 
 /**
  * 楽天ジャンルAPI関連サービスクラス
  */
 class RakutenGenreService
 {
+    /** @var ApiExecuteService */
+    private $apiExecuteService;
     /** @var RaktenGenre */
     private $rakutenGenre;
-    /** @var HttpClient */
-    private $httpClient;
 
     // 取得対象の階層を指定する
     const TARGET_RANGE_GENRE_LEVEL = 3;
@@ -22,15 +20,14 @@ class RakutenGenreService
     /**
      * RakutenGenreService constructor.
      * @param RakutenGenre $rakutenGenre
-     * @param HttpClient $httpClient
      */
     public function __construct(
-        RakutenGenre $rakutenGenre,
-        HttpClient $httpClient
+        ApiExecuteService $apiExecuteService,
+        RakutenGenre $rakutenGenre
     )
     {
+        $this->apiExecuteService = $apiExecuteService;
         $this->rakutenGenre = $rakutenGenre;
-        $this->httpClient = $httpClient;
     }
 
     /**
@@ -68,7 +65,7 @@ class RakutenGenreService
             $apiUrl = config('rakuten.genreApi.apiUrl');
             $url = sprintf($apiUrl['baseUrl'], $apiUrl['applicationId'], $apiUrl['formatVersion'], $apiUrl['elements'], $apiUrl['defaultGenreId']);
             // データ取得
-            $apiExecuteResult = $this->apiExecute($method, $url);
+            $apiExecuteResult = $this->apiExecuteService->apiExecute($method, $url);
             if (!$apiExecuteResult['resultStatus']) {
                 return $result;
             }
@@ -82,7 +79,7 @@ class RakutenGenreService
             $apiUrl = config('rakuten.genreApi.apiUrl');
             $url = sprintf($apiUrl['baseUrl'], $apiUrl['applicationId'], $apiUrl['formatVersion'], $apiUrl['elements'], $parentGenreData['genreId']);
             // データ取得
-            $apiExecuteResult = $this->apiExecute($method, $url);
+            $apiExecuteResult = $this->apiExecuteService->apiExecute($method, $url);
             if (!$apiExecuteResult['resultStatus']) {
                 return $result;
             }
@@ -186,7 +183,7 @@ class RakutenGenreService
                 $genreData['children'] = $index[$genreId]['children'];
                 $index[$genreId] = $genreData;
             } else {
-                $index[$id] = $genreData;
+                $index[$genreId] = $genreData;
             }
 
             if ($parentId == 0) {
@@ -196,29 +193,5 @@ class RakutenGenreService
             }
         }
         return $tree;
-    }
-
-    /**
-     * API実行処理
-     * @param string $method
-     * @param string $url
-     * @param array $options
-     * @return array $result
-     */
-    private function apiExecute($method, $url, $options = [])
-    {
-        $result = [
-            'resultStatus'  => false,
-            'response'      => [],
-        ];
-        // API実行処理
-        try {
-            $response = $this->httpClient->request($method, $url, $options);
-            $result['response'] = json_decode($response->getBody()->getContents(), true);
-            $result['resultStatus'] = true;
-        } catch (RequestException $e) {
-            // TODO API実行エラー、ログ出力などが必要であればここに記載
-        }
-        return $result;
     }
 }

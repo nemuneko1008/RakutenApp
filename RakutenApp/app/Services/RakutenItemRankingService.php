@@ -4,8 +4,6 @@ namespace App\Services;
 
 use App\Models\RakutenApp\RakutenGenre;
 use App\Models\RakutenApp\RakutenItemRanking;
-use GuzzleHttp\Client as HttpClient;
-use GuzzleHttp\Exception\RequestException;
 
 /**
  * Class RakutenItemRankingService
@@ -13,28 +11,27 @@ use GuzzleHttp\Exception\RequestException;
  */
 class RakutenItemRankingService
 {
+    /** @var ApiExecuteService */
+    private $apiExecuteService;
     /** @var RaktenGenre */
     private $rakutenGenre;
     /** @var RaktenGenre */
     private $rakutenItemRanking;
-    /** @var HttpClient */
-    private $httpClient;
 
     /**
      * RakutenItemRankingService constructor.
      * @param RakutenGenre $rakutenGenre
      * @param RakutenItemRanking $rakutenItemRanking
-     * @param HttpClient $httpClient
      */
     public function __construct(
+        ApiExecuteService $apiExecuteService,
         RakutenGenre $rakutenGenre,
-        RakutenItemRanking $rakutenItemRanking,
-        HttpClient $httpClient
+        RakutenItemRanking $rakutenItemRanking
     )
     {
+        $this->apiExecuteService = $apiExecuteService;
         $this->rakutenGenre = $rakutenGenre;
         $this->rakutenItemRanking = $rakutenItemRanking;
-        $this->httpClient = $httpClient;
     }
 
     /**
@@ -61,7 +58,7 @@ class RakutenItemRankingService
             $apiUrl = config('rakuten.itemRankingApi.apiUrl');
             $url = sprintf($apiUrl['baseUrl'], $apiUrl['applicationId'], $apiUrl['formatVersion'], $apiUrl['elements'], $genreData->genre_id);
             // データ取得
-            $apiExecuteResult = $this->apiExecute($method, $url);
+            $apiExecuteResult = $this->apiExecuteService->apiExecute($method, $url);
             // FIXME 「genreID=100000」 の際にエラーが発生しているため取得失敗時も処理を継続させている
             if ($apiExecuteResult['resultStatus']) {
                 $apiExecuteResult['response']['genreId'] =  $genreData->genre_id;
@@ -132,29 +129,5 @@ class RakutenItemRankingService
         }
         return $result;
 
-    }
-
-    /**
-     * API実行処理
-     * @param string $method
-     * @param string $url
-     * @param array $options
-     * @return array $result
-     */
-    private function apiExecute($method, $url, $options = [])
-    {
-        $result = [
-            'resultStatus' => false,
-            'response' => [],
-        ];
-        // API実行処理
-        try {
-            $response = $this->httpClient->request($method, $url, $options);
-            $result['response'] = json_decode($response->getBody()->getContents(), true);
-            $result['resultStatus'] = true;
-        } catch (RequestException $e) {
-            // TODO API実行エラー、ログ出力などが必要であればここに記載
-        }
-        return $result;
     }
 }
